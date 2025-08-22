@@ -46,6 +46,11 @@ const OrderSchema = new Schema<IOrder, OrderModel>(
       ],
       default: "pending",
     },
+    customerId: {
+      // NEW
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     type: { type: String, enum: ["pickup", "delivery"], default: "pickup" },
     notes: { type: String },
   },

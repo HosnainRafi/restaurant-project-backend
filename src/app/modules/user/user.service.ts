@@ -7,16 +7,13 @@ const syncUser = async (payload: {
   email: string;
 }): Promise<IUser> => {
   const { uid, email } = payload;
-
-  // Find user by Firebase UID
   let user = await User.findOne({ uid });
 
-  // If user doesn't exist, create a new one in your DB
   if (!user) {
     user = await User.create({
       uid,
       email,
-      role: "staff", // Assign a default role
+      role: "customer", // Changed default role to 'customer'
     });
   }
 

@@ -8,6 +8,7 @@ export interface IOrderItem {
 }
 
 export interface IOrder {
+  customerId?: Types.ObjectId;
   restaurantId: Types.ObjectId;
   orderNumber: string;
   customer: {

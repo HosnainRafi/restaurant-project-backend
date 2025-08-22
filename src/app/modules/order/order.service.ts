@@ -12,7 +12,7 @@ const createOrderIntoDB = async (
   payload: Omit<
     IOrder,
     "restaurantId" | "orderNumber" | "subtotal" | "tax" | "total" | "status"
-  >,
+  > & { customerId?: string },
   restaurantId: string
 ): Promise<IOrder> => {
   const menuItemIds = payload.items.map((item) => item.menuItemId);
@@ -82,17 +82,26 @@ const getOrdersFromDB = async (restaurantId: string): Promise<IOrder[]> => {
 const updateOrderStatusInDB = async (
   orderId: string,
   status: IOrder["status"]
-): Promise<IOrder | null> => {
+): Promise<IOrder> => {
   const result = await Order.findByIdAndUpdate(
     orderId,
     { status },
     { new: true }
   );
+
   if (!result) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Order not found with this ID");
+    throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
   }
-  // Real-time: emit event for all dashboard listeners
+
+  // 1. Notify the admin dashboard (already done)
   getIO().to(result.restaurantId.toString()).emit("order:updated", result);
+
+  // 2. NEW: Notify the specific customer
+  if (result.customerId) {
+    // We use the customer's MongoDB _id as their unique room name
+    getIO().to(result.customerId.toString()).emit("order:notification", result);
+  }
+
   return result;
 };
 
