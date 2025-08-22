@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
 import app from "./app";
 import config from "./config";
-import { Server } from "http";
+import http, { Server as HTTPServer } from "http";
+import { initSocket } from "./socket";
 
-let server: Server;
+let server: HTTPServer;
 
 async function bootstrap() {
   try {
@@ -13,7 +14,13 @@ async function bootstrap() {
     await mongoose.connect(config.database_url);
     console.log("✅ Database connected successfully");
 
-    server = app.listen(config.port, () => {
+    // Wrap express app with HTTP server
+    server = http.createServer(app);
+
+    // Attach socket.io
+    initSocket(server);
+
+    server.listen(config.port, () => {
       console.log(`🚀 Application listening on port ${config.port}`);
     });
   } catch (err) {

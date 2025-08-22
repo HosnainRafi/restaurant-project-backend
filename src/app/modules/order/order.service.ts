@@ -4,6 +4,7 @@ import { MenuItem } from "../menuItem/menuItem.model";
 import { IOrder, IOrderItem } from "./order.interface";
 import { Order } from "./order.model";
 import mongoose from "mongoose";
+import { getIO } from "../../../socket";
 
 const TAX_RATE = 0.08; // 8% sales tax
 
@@ -67,6 +68,7 @@ const createOrderIntoDB = async (
   };
 
   const result = await Order.create(orderData);
+  getIO().to(restaurantId).emit("order:created", result);
   return result;
 };
 
@@ -86,10 +88,11 @@ const updateOrderStatusInDB = async (
     { status },
     { new: true }
   );
-
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, "Order not found with this ID");
   }
+  // Real-time: emit event for all dashboard listeners
+  getIO().to(result.restaurantId.toString()).emit("order:updated", result);
   return result;
 };
 
