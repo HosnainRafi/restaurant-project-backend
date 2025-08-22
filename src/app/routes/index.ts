@@ -5,7 +5,8 @@ import { MenuCategoryRoutes } from "../modules/menuCategory/menuCategory.route";
 import { MenuItemRoutes } from "../modules/menuItem/menuItem.route";
 import { OrderRoutes } from "../modules/order/order.route";
 import { RestaurantRoutes } from "../modules/restaurant/restaurant.route";
-import {PaymentRoutes} from "../modules/payment/payment.route";
+import { PaymentRoutes } from "../modules/payment/payment.route";
+import { ChefRoutes } from "../modules/chef/chef.route";
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ const moduleRoutes = [
   { path: "/orders", route: OrderRoutes },
   { path: "/restaurant", route: RestaurantRoutes },
   { path: "/payment", route: PaymentRoutes },
+  { path: "/chefs", route: ChefRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
