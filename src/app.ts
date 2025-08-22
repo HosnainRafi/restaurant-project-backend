@@ -4,13 +4,37 @@ import httpStatus from "http-status";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import router from "./app/routes";
 import config from "./config";
+import { stripeWebhook } from "./app/modules/payment/payment.controller";
 
 const app: Application = express();
 
 // Middlewares
 app.use(cors({ origin: config.client_origin, credentials: true }));
+// for Stripe
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self' https://js.stripe.com https://m.stripe.network 'unsafe-inline'; " +
+    "worker-src 'self' blob:; " +
+    "connect-src 'self' https://api.stripe.com https://m.stripe.network;"
+  );
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.post(
+  "/api/v1/payment/webhook",
+  express.raw({ type: "application/json" }), // raw body for Stripe
+  stripeWebhook
+);
+
+// End code for stripe
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // Application Routes
 app.use("/api/v1", router);
