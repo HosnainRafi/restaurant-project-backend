@@ -48,7 +48,13 @@ const getAllOrders = catchAsync(async (req, res) => {
 const updateOrderStatus = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const result = await OrderService.updateOrderStatusInDB(id, status);
+
+  // --- MODIFICATION ---
+  // Pass the user's role from the auth middleware to the service
+  const userRole = req.user.role;
+
+  const result = await OrderService.updateOrderStatusInDB(id, status, userRole);
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

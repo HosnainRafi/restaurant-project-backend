@@ -12,4 +12,6 @@ router.post(
   UserController.syncUser // A new controller we need to create
 );
 
+router.get("/me", auth(), UserController.getMe);
+
 export const UserRoutes = router;

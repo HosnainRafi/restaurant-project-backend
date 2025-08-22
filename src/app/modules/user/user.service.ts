@@ -20,6 +20,12 @@ const syncUser = async (payload: {
   return user;
 };
 
+const getUserByUid = async (uid: string): Promise<IUser | null> => {
+  const user = await User.findOne({ uid });
+  return user;
+};
+
 export const UserService = {
   syncUser,
+  getUserByUid,
 };

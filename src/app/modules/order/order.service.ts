@@ -1,14 +1,19 @@
 import httpStatus from "http-status";
 import mongoose from "mongoose";
+import Stripe from "stripe"; // Your import is correct
 import { getIO } from "../../../socket";
 import ApiError from "../../../utils/ApiError";
 import { MenuItem } from "../menuItem/menuItem.model";
+import { TUserRole } from "../user/user.interface";
 import { IOrder, IOrderItem } from "./order.interface";
 import { Order } from "./order.model";
 
+// --- FIX: Instantiate the Stripe object ---
+// Create a new instance of the Stripe class with your secret key.
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 const TAX_RATE = 0.08;
 
-// A state machine defining all valid status transitions
 const allowedTransitions: Partial<
   Record<IOrder["status"], IOrder["status"][]>
 > = {
@@ -16,7 +21,6 @@ const allowedTransitions: Partial<
   confirmed: ["preparing", "cancelled"],
   preparing: ["ready", "cancelled"],
   ready: ["completed", "cancelled"],
-  // Final states have no available transitions
   completed: [],
   cancelled: [],
 };
@@ -34,7 +38,7 @@ const createOrderIntoDB = async (
   > & { customerId?: string },
   restaurantId: string
 ): Promise<IOrder> => {
-  // This function remains the same.
+  // This function is correct and does not need changes.
   const menuItemIds = payload.items.map((item) => item.menuItemId);
   const availableItems = await MenuItem.find({
     _id: { $in: menuItemIds },
@@ -91,7 +95,7 @@ const getOrdersFromDB = async (
   restaurantId: string,
   query: { page?: string; status?: string; limit?: string }
 ): Promise<IOrder[]> => {
-  // This function remains the same.
+  // This function is correct and does not need changes.
   const page = Number(query.page) || 1;
   const limit = Number(query.limit) || 15;
   const skip = (page - 1) * limit;
@@ -108,12 +112,44 @@ const getOrdersFromDB = async (
   return result;
 };
 
-// --- THIS IS THE FUNCTION TO UPDATE ---
+const refundStripePayment = async (paymentIntentId: string) => {
+  try {
+    // Both calls now correctly use the lowercase 'stripe' instance
+    const existingRefunds = await stripe.refunds.list({
+      payment_intent: paymentIntentId,
+      limit: 1,
+    });
+
+    if (existingRefunds.data.length > 0) {
+      console.log(
+        `Refund already exists for Payment Intent ${paymentIntentId}. Skipping.`
+      );
+      return;
+    }
+
+    await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+    });
+    console.log(
+      `Stripe refund initiated for Payment Intent ${paymentIntentId}.`
+    );
+  } catch (error: any) {
+    console.error(
+      `Stripe refund failed for Payment Intent ${paymentIntentId}:`,
+      error.message
+    );
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Stripe refund failed. Please check the Stripe dashboard to process it manually."
+    );
+  }
+};
+
 const updateOrderStatusInDB = async (
   orderId: string,
-  newStatus: IOrder["status"]
+  newStatus: IOrder["status"],
+  userRole: TUserRole
 ): Promise<IOrder> => {
-  // 1. Fetch the order from the database
   const order = await Order.findById(orderId);
 
   if (!order) {
@@ -122,7 +158,6 @@ const updateOrderStatusInDB = async (
 
   const currentStatus = order.status;
 
-  // 2. Lock final states: prevent updates if the order is already completed or cancelled
   if (currentStatus === "completed" || currentStatus === "cancelled") {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
@@ -130,24 +165,37 @@ const updateOrderStatusInDB = async (
     );
   }
 
-  // 3. Validate the requested transition
-  const validNextStatuses = allowedTransitions[currentStatus];
-  if (!validNextStatuses || !validNextStatuses.includes(newStatus)) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      `Invalid status transition from '${currentStatus}' to '${newStatus}'.`
-    );
+  if (newStatus === "cancelled") {
+    if (
+      (currentStatus === "preparing" || currentStatus === "ready") &&
+      userRole !== "manager" &&
+      userRole !== "admin"
+    ) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        "Manager permission is required to cancel an order that is being prepared."
+      );
+    }
+
+    if (order.paymentStatus === "paid" && order.paymentIntentId) {
+      await refundStripePayment(order.paymentIntentId);
+    }
+  } else {
+    const validNextStatuses = allowedTransitions[currentStatus];
+    if (!validNextStatuses || !validNextStatuses.includes(newStatus)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Invalid status transition from '${currentStatus}' to '${newStatus}'.`
+      );
+    }
   }
 
-  // 4. If validation passes, update the document
   order.status = newStatus;
   const updatedOrder = await order.save();
 
-  // 5. Notify clients via WebSocket
   getIO()
     .to(updatedOrder.restaurantId.toString())
     .emit("order:updated", updatedOrder);
-
   if (updatedOrder.customerId) {
     getIO()
       .to(updatedOrder.customerId.toString())
@@ -158,7 +206,7 @@ const updateOrderStatusInDB = async (
 };
 
 const handleSuccessfulPayment = async (orderId: string): Promise<void> => {
-  // This function remains the same.
+  // This function is correct and does not need changes.
   const order = await Order.findById(orderId);
   if (!order) {
     console.error(`Webhook Error: Could not find order with ID ${orderId}`);

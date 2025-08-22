@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
 import { IUser, UserModel } from "./user.interface";
 
-const UserSchema = new Schema<IUser>(
+const UserSchema = new Schema<IUser, UserModel>(
   {
     uid: { type: String, required: true, unique: true },
     email: {
@@ -13,8 +13,9 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["admin", "staff", "customer"], // Add 'customer'
-      default: "customer", // Default new sign-ups to 'customer'
+      // --- Add 'manager' to the enum ---
+      enum: ["admin", "manager", "staff", "customer"],
+      default: "customer",
     },
   },
   { timestamps: true }

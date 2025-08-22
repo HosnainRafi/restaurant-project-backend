@@ -1,6 +1,6 @@
 import { Model } from "mongoose";
 
-export type TUserRole = "admin" | "staff" | "customer"; // Add 'customer'
+export type TUserRole = "admin" | "manager" | "staff" | "customer"; // Add 'customer'
 
 export interface IUser {
   uid: string; // Firebase Unique ID

@@ -17,6 +17,17 @@ const syncUser = catchAsync(async (req, res) => {
   });
 });
 
+const getMe = catchAsync(async (req, res) => {
+  const user = await UserService.getUserByUid(req.user.uid);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User profile retrieved successfully",
+    data: user,
+  });
+});
+
 export const UserController = {
   syncUser,
+  getMe,
 };
