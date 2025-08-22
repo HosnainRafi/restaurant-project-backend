@@ -1,7 +1,8 @@
+// src/app/modules/menuItem/menuItem.model.ts
 import { Schema, model } from "mongoose";
 import { IMenuItem, MenuItemModel } from "./menuItem.interface";
 
-const MenuItemSchema = new Schema<IMenuItem, MenuItemModel>(
+const MenuItemSchema = new Schema<IMenuItem>(
   {
     restaurantId: {
       type: Schema.Types.ObjectId,
@@ -21,6 +22,11 @@ const MenuItemSchema = new Schema<IMenuItem, MenuItemModel>(
     calories: { type: Number },
     isAvailable: { type: Boolean, default: true },
     displayOrder: { type: Number, default: 0 },
+
+    // Special flags
+    isFeatured: { type: Boolean, default: false },
+    isChefsRecommendation: { type: Boolean, default: false },
+    isTodaysSpecial: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

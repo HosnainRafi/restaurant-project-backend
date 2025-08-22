@@ -1,3 +1,4 @@
+// src/app/modules/menuItem/menuItem.validation.ts
 import { z } from "zod";
 
 export const createMenuItemValidationSchema = z.object({
@@ -15,10 +16,14 @@ export const createMenuItemValidationSchema = z.object({
     calories: z.number().optional(),
     isAvailable: z.boolean().optional(),
     displayOrder: z.number().optional(),
+
+    // Special flags
+    isFeatured: z.boolean().optional(),
+    isChefsRecommendation: z.boolean().optional(),
+    isTodaysSpecial: z.boolean().optional(),
   }),
 });
 
-// ✅ New validation schema for updates
 export const updateMenuItemValidationSchema = z.object({
-  body: createMenuItemValidationSchema.shape.body.partial(), // Makes all fields optional
+  body: createMenuItemValidationSchema.shape.body.partial(),
 });

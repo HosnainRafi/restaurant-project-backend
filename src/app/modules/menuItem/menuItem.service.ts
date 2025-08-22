@@ -1,3 +1,4 @@
+// src/app/modules/menuItem/menuItem.service.ts
 import httpStatus from "http-status";
 import ApiError from "../../../utils/ApiError";
 import { IMenuItem } from "./menuItem.interface";
@@ -8,7 +9,7 @@ const createMenuItemIntoDB = async (
   restaurantId: string
 ): Promise<IMenuItem> => {
   const itemData = { ...payload, restaurantId };
-  const result = await MenuItem.create(itemData);
+  const result = await MenuItem.create(itemData as any);
   return result;
 };
 
@@ -24,12 +25,11 @@ const getMenuItemsFromDB = async (
 const updateMenuItemInDB = async (
   id: string,
   payload: Partial<IMenuItem>
-): Promise<IMenuItem | null> => {
+): Promise<IMenuItem> => {
   const result = await MenuItem.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
   });
-
   if (!result) {
     throw new ApiError(
       httpStatus.NOT_FOUND,
@@ -39,8 +39,7 @@ const updateMenuItemInDB = async (
   return result;
 };
 
-// ✅ New function to delete a menu item
-const deleteMenuItemFromDB = async (id: string): Promise<IMenuItem | null> => {
+const deleteMenuItemFromDB = async (id: string): Promise<IMenuItem> => {
   const result = await MenuItem.findByIdAndDelete(id);
   if (!result) {
     throw new ApiError(
@@ -51,9 +50,24 @@ const deleteMenuItemFromDB = async (id: string): Promise<IMenuItem | null> => {
   return result;
 };
 
+// Replaces specialCategory lookup with boolean flag-based filtering
+const getSpecialMenuItemsFromDB = async (
+  restaurantId: string,
+  flag: "isFeatured" | "isChefsRecommendation" | "isTodaysSpecial"
+): Promise<IMenuItem[]> => {
+  return await MenuItem.find({
+    restaurantId,
+    [flag]: true,
+    isAvailable: true,
+  })
+    .populate("categoryId")
+    .sort({ displayOrder: 1 });
+};
+
 export const MenuItemService = {
   createMenuItemIntoDB,
   getMenuItemsFromDB,
   updateMenuItemInDB,
-  deleteMenuItemFromDB, // ✅ Export the new function
+  deleteMenuItemFromDB,
+  getSpecialMenuItemsFromDB,
 };

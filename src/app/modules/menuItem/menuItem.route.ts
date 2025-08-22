@@ -1,3 +1,4 @@
+// src/app/modules/menuItem/menuItem.route.ts
 import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
 import { MenuItemController } from "./menuItem.controller";
@@ -17,6 +18,12 @@ router.post(
 );
 
 router.get(
+  "/special",
+  // Public route
+  MenuItemController.getSpecialMenuItems
+);
+
+router.get(
   "/",
   // Public route
   MenuItemController.getMenuItems
@@ -29,7 +36,6 @@ router.patch(
   MenuItemController.updateMenuItem
 );
 
-// ✅ New route for deleting a menu item by its ID
 router.delete(
   "/:id",
   // auth('admin'),
