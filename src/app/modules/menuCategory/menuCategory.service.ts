@@ -1,7 +1,7 @@
+// src/app/modules/menuCategory/menuCategory.service.ts
 import { IMenuCategory } from "./menuCategory.interface";
 import { MenuCategory } from "./menuCategory.model";
 
-// In a real app, restaurantId would be passed dynamically
 const createCategoryIntoDB = async (
   payload: Omit<IMenuCategory, "restaurantId">,
   restaurantId: string

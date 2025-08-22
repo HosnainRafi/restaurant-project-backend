@@ -5,6 +5,7 @@ export interface IMenuCategory {
   name: string;
   description?: string;
   displayOrder: number;
+  imageUrl?: string;
 }
 
 export interface MenuCategoryModel extends Model<IMenuCategory> {}
