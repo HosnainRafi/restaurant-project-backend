@@ -2,11 +2,20 @@ import httpStatus from "http-status";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { OrderService } from "./order.service";
+import { Restaurant } from "../restaurant/restaurant.model";
+import ApiError from "../../../utils/ApiError";
 
 const createOrder = catchAsync(async (req, res) => {
-  // ✅ Use the correct, dynamic restaurant ID
-  const restaurantId = "68a6a96187ed6561f8380f53";
-  const result = await OrderService.createOrderIntoDB(req.body, restaurantId);
+  // Find the single restaurant document
+  const restaurant = await Restaurant.findOne();
+  if (!restaurant) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Restaurant profile not found.");
+  }
+
+  const result = await OrderService.createOrderIntoDB(
+    req.body,
+    restaurant._id.toString()
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -18,8 +27,15 @@ const createOrder = catchAsync(async (req, res) => {
 
 // ✅ New controller to get all orders
 const getAllOrders = catchAsync(async (req, res) => {
-  const restaurantId = "68a6a96187ed6561f8380f53"; // Use your correct restaurant ID
-  const result = await OrderService.getOrdersFromDB(restaurantId);
+  const restaurant = await Restaurant.findOne();
+  if (!restaurant) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Restaurant profile not found.");
+  }
+
+  const result = await OrderService.getOrdersFromDB(
+    restaurant._id.toString(),
+    req.query
+  );
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

@@ -47,12 +47,20 @@ const OrderSchema = new Schema<IOrder, OrderModel>(
       default: "pending",
     },
     customerId: {
-      // NEW
       type: Schema.Types.ObjectId,
       ref: "User",
     },
     type: { type: String, enum: ["pickup", "delivery"], default: "pickup" },
     notes: { type: String },
+    // --- NEW FIELDS ---
+    paymentStatus: {
+      type: String,
+      enum: ["paid", "unpaid"],
+      default: "unpaid",
+    },
+    paymentIntentId: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

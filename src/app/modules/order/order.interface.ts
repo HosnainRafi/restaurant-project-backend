@@ -31,6 +31,9 @@ export interface IOrder {
     | "cancelled";
   type: "pickup" | "delivery";
   notes?: string;
+  // --- NEW FIELDS ---
+  paymentStatus: "paid" | "unpaid";
+  paymentIntentId?: string; // To store the Stripe Payment Intent ID
 }
 
 export interface OrderModel extends Model<IOrder> {}

@@ -7,6 +7,14 @@ import mongoose from "mongoose";
 import { getIO } from "../../../socket";
 
 const TAX_RATE = 0.08; // 8% sales tax
+const allowedTransitions: Record<string, Array<IOrder["status"]>> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["preparing", "cancelled"],
+  preparing: ["ready", "cancelled"],
+  ready: ["completed", "cancelled"],
+  completed: [], // Final state
+  cancelled: [], // Final state
+};
 
 const createOrderIntoDB = async (
   payload: Omit<
@@ -73,8 +81,27 @@ const createOrderIntoDB = async (
 };
 
 // ✅ New function to get all orders
-const getOrdersFromDB = async (restaurantId: string): Promise<IOrder[]> => {
-  const result = await Order.find({ restaurantId }).sort({ createdAt: -1 });
+const getOrdersFromDB = async (
+  restaurantId: string,
+  query: { page?: string; status?: string }
+): Promise<IOrder[]> => {
+  const page = Number(query.page) || 1;
+  const limit = 10; // Or make this configurable
+  const skip = (page - 1) * limit;
+
+  const filter: { restaurantId: any; status?: string } = {
+    restaurantId: new mongoose.Types.ObjectId(restaurantId),
+  };
+
+  if (query.status) {
+    filter.status = query.status;
+  }
+
+  const result = await Order.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
   return result;
 };
 
@@ -83,6 +110,21 @@ const updateOrderStatusInDB = async (
   orderId: string,
   status: IOrder["status"]
 ): Promise<IOrder> => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+  }
+
+  // State transition validation
+  const currentStatus = order.status;
+  if (!allowedTransitions[currentStatus]?.includes(status)) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `Cannot transition order from '${currentStatus}' to '${status}'`
+    );
+  }
+
   const result = await Order.findByIdAndUpdate(
     orderId,
     { status },
@@ -90,23 +132,36 @@ const updateOrderStatusInDB = async (
   );
 
   if (!result) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+    // This case is unlikely if the first findById succeeds, but good for safety
+    throw new ApiError(httpStatus.NOT_FOUND, "Order not found during update");
   }
 
-  // 1. Notify the admin dashboard (already done)
+  // Your socket logic remains the same
   getIO().to(result.restaurantId.toString()).emit("order:updated", result);
-
-  // 2. NEW: Notify the specific customer
   if (result.customerId) {
-    // We use the customer's MongoDB _id as their unique room name
     getIO().to(result.customerId.toString()).emit("order:notification", result);
   }
 
   return result;
 };
 
+const handleSuccessfulPayment = async (orderId: string): Promise<void> => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    console.error(`Webhook Error: Could not find order with ID ${orderId}`);
+    return;
+  }
+
+  order.paymentStatus = "paid";
+  await order.save();
+
+  // Notify the admin dashboard that the payment status was updated
+  getIO().to(order.restaurantId.toString()).emit("order:updated", order);
+};
+
 export const OrderService = {
   createOrderIntoDB,
   getOrdersFromDB,
   updateOrderStatusInDB,
+  handleSuccessfulPayment,
 };
