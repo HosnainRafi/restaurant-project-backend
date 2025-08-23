@@ -17,5 +17,7 @@ router.get(
   // This can be a public route
   MenuCategoryController.getAllMenuCategories
 );
+// For delete
+router.delete("/:categoryId", MenuCategoryController.deleteMenuCategory);
 
 export const MenuCategoryRoutes = router;

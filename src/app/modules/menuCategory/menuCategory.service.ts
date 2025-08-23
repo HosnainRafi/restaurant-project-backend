@@ -19,8 +19,15 @@ const getAllCategoriesFromDB = async (
   });
   return result;
 };
+// For delete
+const deleteCategoryFromDB = async (categoryId: string) => {
+  return await MenuCategory.findByIdAndDelete(categoryId);
+};
+
+
 
 export const MenuCategoryService = {
   createCategoryIntoDB,
   getAllCategoriesFromDB,
+  deleteCategoryFromDB
 };
