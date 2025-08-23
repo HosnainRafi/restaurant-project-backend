@@ -21,19 +21,19 @@ app.use((req, res, next) => {
   );
   next();
 });
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.post(
   "/api/v1/payment/webhook",
   express.raw({ type: "application/json" }), // raw body for Stripe
   stripeWebhook
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // End code for stripe
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 
 
 // Application Routes
