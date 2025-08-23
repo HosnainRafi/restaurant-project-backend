@@ -6,15 +6,16 @@ import { Restaurant } from "../restaurant/restaurant.model";
 import ApiError from "../../../utils/ApiError";
 
 const createOrder = catchAsync(async (req, res) => {
-  // Find the single restaurant document
   const restaurant = await Restaurant.findOne();
   if (!restaurant) {
     throw new ApiError(httpStatus.NOT_FOUND, "Restaurant profile not found.");
   }
 
+  // This call is now correct because the service will accept the third argument.
   const result = await OrderService.createOrderIntoDB(
     req.body,
-    restaurant._id.toString()
+    restaurant._id.toString(),
+    req.user // Pass the authenticated user object from the auth middleware
   );
 
   sendResponse(res, {

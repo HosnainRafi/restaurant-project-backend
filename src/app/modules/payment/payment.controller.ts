@@ -2,10 +2,30 @@ import type { Request, Response } from "express";
 import Stripe from "stripe";
 import { OrderService } from "../order/order.service"; // 👈 Import OrderService
 import { Order } from "../order/order.model";
+import catchAsync from "../../../shared/catchAsync";
+import sendResponse from "../../../shared/sendResponse";
+import httpStatus from "http-status";
+import { PaymentService } from "./payment.service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-07-30.basil",
 });
+
+const createPaymentIntentForOrder = catchAsync(
+  async (req: Request, res: Response) => {
+    const { orderId } = req.body;
+    const result = await PaymentService.createPaymentIntentForOrder(
+      orderId,
+      req.user.uid
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Payment intent created successfully",
+      data: result,
+    });
+  }
+);
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
   try {
@@ -98,4 +118,8 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     console.error("Webhook handler error:", err);
     return res.status(500).send("Webhook handler error");
   }
+};
+
+export const PaymentController = {
+  createPaymentIntentForOrder,
 };

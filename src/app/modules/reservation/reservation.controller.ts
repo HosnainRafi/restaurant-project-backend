@@ -2,14 +2,16 @@ import httpStatus from "http-status";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { ReservationService } from "./reservation.service";
+import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 
 const createReservation = catchAsync(async (req, res) => {
-  // In a real app, restaurantId would come from req.params or a similar source
   const restaurantId = "60d0fe4f5311236168a109ca"; // Placeholder
-  const reservationData = { ...req.body, restaurantId };
 
-  const result =
-    await ReservationService.createReservationIntoDB(reservationData);
+  const result = await ReservationService.createReservationIntoDB(
+    req.body,
+    restaurantId,
+    req.user as DecodedIdToken | null // Cast req.user to the correct type
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,

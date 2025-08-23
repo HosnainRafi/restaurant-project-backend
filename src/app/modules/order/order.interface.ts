@@ -16,6 +16,7 @@ export interface IOrder {
     phone: string;
     email?: string;
     address?: string; // For delivery
+    uid?: string;
   };
   items: IOrderItem[];
   subtotal: number; // in cents

@@ -7,6 +7,8 @@ import { MenuItem } from "../menuItem/menuItem.model";
 import { TUserRole } from "../user/user.interface";
 import { IOrder, IOrderItem } from "./order.interface";
 import { Order } from "./order.model";
+import { User } from "../user/user.model";
+import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 
 // --- FIX: Instantiate the Stripe object ---
 // Create a new instance of the Stripe class with your secret key.
@@ -26,6 +28,7 @@ const allowedTransitions: Partial<
 };
 
 const createOrderIntoDB = async (
+  // --- FIX #1: Provide the second argument to Omit ---
   payload: Omit<
     IOrder,
     | "restaurantId"
@@ -35,24 +38,33 @@ const createOrderIntoDB = async (
     | "total"
     | "status"
     | "paymentStatus"
-  > & { customerId?: string },
-  restaurantId: string
+  >,
+  restaurantId: string,
+  user: DecodedIdToken | null
 ): Promise<IOrder> => {
-  // This function is correct and does not need changes.
-  const menuItemIds = payload.items.map((item) => item.menuItemId);
+  const customerData = {
+    ...payload.customer,
+    uid: user?.uid,
+  };
+
+  // --- FIX #3: Explicitly type the 'item' parameter ---
+  const menuItemIds = payload.items.map((item: IOrderItem) => item.menuItemId);
   const availableItems = await MenuItem.find({
     _id: { $in: menuItemIds },
     isAvailable: true,
   });
+
   if (menuItemIds.length !== availableItems.length) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "One or more menu items are invalid or unavailable."
     );
   }
+
   let subtotal = 0;
   const processedItems: IOrderItem[] = [];
-  for (const requestedItem of payload.items) {
+  // --- FIX #3: Explicitly type the 'requestedItem' parameter ---
+  for (const requestedItem of payload.items as IOrderItem[]) {
     const dbItem = availableItems.find(
       (item) => item._id.toString() === requestedItem.menuItemId.toString()
     );
@@ -71,14 +83,17 @@ const createOrderIntoDB = async (
       price: dbItem.price,
     });
   }
+
   const tax = Math.round(subtotal * TAX_RATE);
   const tip = payload.tip || 0;
   const total = subtotal + tax + tip;
   const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
   const orderData = {
     ...payload,
     items: processedItems,
     restaurantId: new mongoose.Types.ObjectId(restaurantId),
+    customer: customerData,
     orderNumber,
     subtotal,
     tax,
@@ -86,6 +101,7 @@ const createOrderIntoDB = async (
     status: "pending",
     paymentStatus: "unpaid",
   } as IOrder;
+
   const result = await Order.create(orderData);
   getIO().to(restaurantId).emit("order:created", result);
   return result;

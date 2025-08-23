@@ -12,6 +12,7 @@ export const createOrderValidationSchema = z.object({
       phone: z.string({ required_error: "Customer phone is required" }),
       email: z.string().email().optional(),
       address: z.string().optional(),
+      uid: z.string().optional(),
     }),
     items: z
       .array(OrderItemSchema)

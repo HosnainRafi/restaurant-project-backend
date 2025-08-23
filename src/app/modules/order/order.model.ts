@@ -28,6 +28,7 @@ const OrderSchema = new Schema<IOrder, OrderModel>(
       phone: { type: String, required: true },
       email: { type: String },
       address: { type: String },
+      uid: { type: String },
     },
     items: [OrderItemSchema],
     subtotal: { type: Number, required: true },

@@ -5,6 +5,7 @@ import {
   createReservationValidationSchema,
   updateReservationStatusValidationSchema,
 } from "./reservation.validation";
+import auth from "../../../app/middlewares/auth";
 // import auth from '../../middlewares/auth'; // You would create an auth middleware
 
 const router = express.Router();
@@ -12,6 +13,7 @@ const router = express.Router();
 // Public route for customers to create a reservation
 router.post(
   "/",
+  auth(),
   validateRequest(createReservationValidationSchema),
   ReservationController.createReservation
 );
