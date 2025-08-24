@@ -8,6 +8,7 @@ import { RestaurantRoutes } from "../modules/restaurant/restaurant.route";
 import { PaymentRoutes } from "../modules/payment/payment.route";
 import { ChefRoutes } from "../modules/chef/chef.route";
 import { CustomerRoutes } from "../modules/customer/customer.route";
+import { NotificationRoutes } from "../modules/notification/notification.route";
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ const moduleRoutes = [
   { path: "/payment", route: PaymentRoutes },
   { path: "/chefs", route: ChefRoutes },
   { path: "/customer", route: CustomerRoutes },
+  { path: "/notifications", route: NotificationRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
