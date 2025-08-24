@@ -9,6 +9,7 @@ import { IOrder, IOrderItem } from "./order.interface";
 import { Order } from "./order.model";
 import { User } from "../user/user.model";
 import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
+import { NotificationService } from "../notification/notification.service";
 
 // --- FIX: Instantiate the Stripe object ---
 // Create a new instance of the Stripe class with your secret key.
@@ -27,8 +28,8 @@ const allowedTransitions: Partial<
   cancelled: [],
 };
 
+// --- FIX #1: Provide the second argument to Omit ---
 const createOrderIntoDB = async (
-  // --- FIX #1: Provide the second argument to Omit ---
   payload: Omit<
     IOrder,
     | "restaurantId"
@@ -103,7 +104,26 @@ const createOrderIntoDB = async (
   } as IOrder;
 
   const result = await Order.create(orderData);
-  getIO().to(restaurantId).emit("order:created", result);
+  const admins = await User.find({ role: { $in: ["admin", "manager"] } });
+  for (const admin of admins) {
+    await NotificationService.createNotification({
+      recipientId: admin._id,
+      message: `New order #${result.orderNumber} has been placed.`,
+      link: `/admin/orders/${result._id}`,
+    });
+  }
+
+  // Notify Customer (if they are logged in)
+  if (result.customer.uid) {
+    const customer = await User.findOne({ uid: result.customer.uid });
+    if (customer) {
+      await NotificationService.createNotification({
+        recipientId: customer._id,
+        message: `Your order #${result.orderNumber} has been placed successfully.`,
+        link: `/my-dashboard`,
+      });
+    }
+  }
   return result;
 };
 
@@ -165,7 +185,7 @@ const updateOrderStatusInDB = async (
   orderId: string,
   newStatus: IOrder["status"],
   userRole: TUserRole
-): Promise<IOrder> => {
+): Promise<IOrder | null> => {
   const order = await Order.findById(orderId);
 
   if (!order) {
@@ -209,17 +229,34 @@ const updateOrderStatusInDB = async (
   order.status = newStatus;
   const updatedOrder = await order.save();
 
-  getIO()
-    .to(updatedOrder.restaurantId.toString())
-    .emit("order:updated", updatedOrder);
+  // 1. Notify all Admins and Managers
+  const adminsToNotify = await User.find({
+    role: { $in: ["admin", "manager"] },
+  });
 
-  // --- NOTIFY THE CUSTOMER ---
-  if (updatedOrder.customer.uid) {
-    // The room name will be user's UID
-    getIO()
-      .to(`user:${updatedOrder.customer.uid}`)
-      .emit("order:updated", updatedOrder);
+  for (const admin of adminsToNotify) {
+    // This check prevents the person who changed the status from getting a notification about their own action.
+    if (userRole !== admin.role) {
+      await NotificationService.createNotification({
+        recipientId: admin._id,
+        message: `Order #${updatedOrder.orderNumber} is now ${newStatus}.`,
+        link: `/admin/orders/${orderId}`,
+      });
+    }
   }
+
+  // 2. Notify the Customer
+  if (updatedOrder.customer.uid) {
+    const customerUser = await User.findOne({ uid: updatedOrder.customer.uid });
+    if (customerUser) {
+      await NotificationService.createNotification({
+        recipientId: customerUser._id,
+        message: `Your order #${updatedOrder.orderNumber} is now ${updatedOrder.status}.`,
+        link: `/my-dashboard`,
+      });
+    }
+  }
+  // --- END: Consolidated Notification Logic ---
 
   return updatedOrder;
 };
