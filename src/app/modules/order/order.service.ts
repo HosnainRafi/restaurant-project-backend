@@ -109,7 +109,7 @@ const createOrderIntoDB = async (
     await NotificationService.createNotification({
       recipientId: admin._id,
       message: `New order #${result.orderNumber} has been placed.`,
-      link: `/admin/orders/${result._id}`,
+      link: `/admin/dashboard/orders`,
     });
   }
 
@@ -120,7 +120,7 @@ const createOrderIntoDB = async (
       await NotificationService.createNotification({
         recipientId: customer._id,
         message: `Your order #${result.orderNumber} has been placed successfully.`,
-        link: `/my-dashboard`,
+        link: `/customer/dashboard/my-orders`,
       });
     }
   }
@@ -240,7 +240,7 @@ const updateOrderStatusInDB = async (
       await NotificationService.createNotification({
         recipientId: admin._id,
         message: `Order #${updatedOrder.orderNumber} is now ${newStatus}.`,
-        link: `/admin/orders/${orderId}`,
+        link: `/admin/dashboard/orders`,
       });
     }
   }
@@ -252,7 +252,7 @@ const updateOrderStatusInDB = async (
       await NotificationService.createNotification({
         recipientId: customerUser._id,
         message: `Your order #${updatedOrder.orderNumber} is now ${updatedOrder.status}.`,
-        link: `/my-dashboard`,
+        link: `/customer/dashboard/my-orders`,
       });
     }
   }
