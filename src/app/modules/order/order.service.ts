@@ -212,10 +212,13 @@ const updateOrderStatusInDB = async (
   getIO()
     .to(updatedOrder.restaurantId.toString())
     .emit("order:updated", updatedOrder);
-  if (updatedOrder.customerId) {
+
+  // --- NOTIFY THE CUSTOMER ---
+  if (updatedOrder.customer.uid) {
+    // The room name will be user's UID
     getIO()
-      .to(updatedOrder.customerId.toString())
-      .emit("order:notification", updatedOrder);
+      .to(`user:${updatedOrder.customer.uid}`)
+      .emit("order:updated", updatedOrder);
   }
 
   return updatedOrder;

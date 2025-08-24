@@ -1,25 +1,27 @@
 import { Server } from "socket.io";
 import type { Server as HTTPServer } from "http";
-import config from "../config";
+import config from "../config/index";
 
 let io: Server | null = null;
 
 export const initSocket = (server: HTTPServer) => {
   io = new Server(server, {
     cors: {
-      origin: config.client_origin || "*", // your React app URL in prod
+      origin: config.client_origin || "*",
       methods: ["GET", "POST", "PATCH"],
       credentials: true,
     },
   });
 
   io.on("connection", (socket) => {
-    const restaurantId = String(socket.handshake.query.restaurantId || "");
-    if (restaurantId) {
-      socket.join(restaurantId);
-      socket.emit("socket:joined", { restaurantId });
-      console.log(`Socket ${socket.id} joined ${restaurantId}`);
-    }
+    console.log(`✅ Socket connected: ${socket.id}`);
+
+    // Generic room joining event
+    socket.on("join_room", (room) => {
+      socket.join(room);
+      console.log(`Socket ${socket.id} joined room: ${room}`);
+    });
+
     socket.on("disconnect", () => {
       console.log(`Socket ${socket.id} disconnected`);
     });
