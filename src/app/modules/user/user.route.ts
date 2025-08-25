@@ -50,11 +50,11 @@ router.patch(
   UserController.updateMe
 );
 
-router.patch(
-  "/me/change-password",
-  auth(),
-  validateRequest(changePasswordValidationSchema),
-  UserController.changePassword
-);
+// router.patch(
+//   "/me/change-password",
+//   auth(),
+//   validateRequest(changePasswordValidationSchema),
+//   UserController.changePassword
+// );
 
 export const UserRoutes = router;
