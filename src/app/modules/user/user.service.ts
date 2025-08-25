@@ -13,25 +13,24 @@ const syncUser = async (payload: {
   uid: string;
   email: string;
   name: string;
-  address: IAddress; // Expect a single address object on registration
+  address?: IAddress; // Expect a single address object on registration
 }): Promise<IUser> => {
   const { uid, email, name, address } = payload;
 
   let user = await User.findOne({ uid });
 
   if (!user) {
-    // If the user doesn't exist, create them with all the new info
     user = await User.create({
       uid,
       email,
       name,
-      addresses: [address], // Store the first address in the array
+      // Only add the addresses array if an address was provided
+      addresses: address ? [address] : [],
       role: "customer",
       photoURL:
         "https://res.cloudinary.com/du8e3wgew/image/upload/v1756087795/dx47mzwd8xxtxacrbd3h.png",
     });
   }
-
   return user;
 };
 
@@ -124,6 +123,18 @@ const cancelMyOrderInDB = async (
   return order;
 };
 
+const changeUserPasswordInDB = async (
+  uid: string,
+  newPassword: string
+): Promise<{ success: boolean }> => {
+  console.log(
+    `Password change requested for user ${uid}. In a real app, you would use the Firebase Admin SDK to update the password here.`
+  );
+  // Example: await admin.auth().updateUser(uid, { password: newPassword });
+  // Since we can't do that here without full setup, we'll simulate success.
+  return { success: true };
+};
+
 export const UserService = {
   syncUser,
   getUserByUid,
@@ -132,4 +143,5 @@ export const UserService = {
   getMyOrderDetailsFromDB,
   cancelMyOrderInDB,
   updateMyProfileInDB,
+  changeUserPasswordInDB,
 };

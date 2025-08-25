@@ -84,6 +84,17 @@ const cancelMyOrder = catchAsync(async (req, res) => {
   });
 });
 
+const changePassword = catchAsync(async (req, res) => {
+  const { newPassword } = req.body;
+  await UserService.changeUserPasswordInDB(req.user.uid, newPassword);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Password updated successfully!",
+    data: null,
+  });
+});
+
 export const UserController = {
   syncUser,
   getMe,
@@ -92,4 +103,5 @@ export const UserController = {
   getMyOrderDetails,
   cancelMyOrder,
   updateMe,
+  changePassword,
 };

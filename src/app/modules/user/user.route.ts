@@ -3,6 +3,7 @@ import { UserController } from "./user.controller";
 import auth from "../../middlewares/auth"; // The new Firebase auth middleware
 import validateRequest from "../../../app/middlewares/validateRequest";
 import {
+  changePasswordValidationSchema,
   updateUserValidationSchema,
   userSyncValidationSchema,
 } from "./user.validation";
@@ -47,6 +48,13 @@ router.patch(
   auth(),
   validateRequest(updateUserValidationSchema), // Apply the update validation
   UserController.updateMe
+);
+
+router.patch(
+  "/me/change-password",
+  auth(),
+  validateRequest(changePasswordValidationSchema),
+  UserController.changePassword
 );
 
 export const UserRoutes = router;

@@ -8,12 +8,11 @@ const addressSchema = z.object({
   details: z.string().min(1, "Address details are required"),
 });
 
-// Updated validation for the user sync/creation endpoint
 export const userSyncValidationSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Full name is required"),
     email: z.string().email("A valid email is required"),
-    address: addressSchema,
+    address: addressSchema.optional(),
   }),
 });
 
@@ -33,4 +32,18 @@ export const loginUserValidationSchema = z.object({
     email: z.string().email("Email is required"),
     password: z.string().min(1, "Password is required"),
   }),
+});
+
+export const changePasswordValidationSchema = z.object({
+  body: z
+    .object({
+      newPassword: z
+        .string()
+        .min(6, "Password must be at least 6 characters long"),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"], // Point error to the confirmPassword field
+    }),
 });
