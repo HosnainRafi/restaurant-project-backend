@@ -3,7 +3,7 @@ import { IOrder } from "../order/order.interface";
 import { Order } from "../order/order.model";
 import { IReservation } from "../reservation/reservation.interface";
 import { Reservation } from "../reservation/reservation.model";
-import { IUser } from "./user.interface";
+import { IAddress, IUser } from "./user.interface";
 import { User } from "./user.model";
 import httpStatus from "http-status";
 import { getIO } from "../../../socket/index";
@@ -12,17 +12,42 @@ import { getIO } from "../../../socket/index";
 const syncUser = async (payload: {
   uid: string;
   email: string;
+  name: string;
+  address: IAddress; // Expect a single address object on registration
 }): Promise<IUser> => {
-  const { uid, email } = payload;
+  const { uid, email, name, address } = payload;
+
   let user = await User.findOne({ uid });
 
   if (!user) {
+    // If the user doesn't exist, create them with all the new info
     user = await User.create({
       uid,
       email,
-      role: "customer", // Changed default role to 'customer'
+      name,
+      addresses: [address], // Store the first address in the array
+      role: "customer",
+      photoURL:
+        "https://res.cloudinary.com/du8e3wgew/image/upload/v1756087795/dx47mzwd8xxtxacrbd3h.png",
     });
   }
+
+  return user;
+};
+
+// --- ADDED: A new service to update the user's profile ---
+const updateMyProfileInDB = async (
+  uid: string,
+  payload: Partial<IUser>
+): Promise<IUser | null> => {
+  // Use findOneAndUpdate to update the user document.
+  // We'll prevent roles and email from being changed via this endpoint.
+  const { role, email, ...updateData } = payload;
+
+  const user = await User.findOneAndUpdate({ uid }, updateData, {
+    new: true, // Return the updated document
+    runValidators: true, // Ensure new addresses match the schema
+  });
 
   return user;
 };
@@ -106,4 +131,5 @@ export const UserService = {
   getMyReservationsFromDB,
   getMyOrderDetailsFromDB,
   cancelMyOrderInDB,
+  updateMyProfileInDB,
 };

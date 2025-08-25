@@ -1,6 +1,11 @@
 import express from "express";
 import { UserController } from "./user.controller";
 import auth from "../../middlewares/auth"; // The new Firebase auth middleware
+import validateRequest from "../../../app/middlewares/validateRequest";
+import {
+  updateUserValidationSchema,
+  userSyncValidationSchema,
+} from "./user.validation";
 
 const router = express.Router();
 
@@ -8,8 +13,9 @@ const router = express.Router();
 // to ensure a user profile exists in our database.
 router.post(
   "/sync",
-  auth(), // We use auth() to ensure only valid Firebase users can sync
-  UserController.syncUser // A new controller we need to create
+  auth(),
+  validateRequest(userSyncValidationSchema), // Apply the new validation
+  UserController.syncUser
 );
 
 router.get("/me", auth(), UserController.getMe);
@@ -34,6 +40,13 @@ router.patch(
   "/me/orders/:id/cancel",
   auth("customer"),
   UserController.cancelMyOrder
+);
+
+router.patch(
+  "/me",
+  auth(),
+  validateRequest(updateUserValidationSchema), // Apply the update validation
+  UserController.updateMe
 );
 
 export const UserRoutes = router;

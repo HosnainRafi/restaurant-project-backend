@@ -4,10 +4,13 @@ import sendResponse from "../../../shared/sendResponse";
 import { UserService } from "./user.service";
 
 const syncUser = catchAsync(async (req, res) => {
-  // The user's Firebase details are attached by the 'auth' middleware
+  // Get the firebase user details from the middleware
   const { uid, email } = req.user;
+  // Get the rest of the registration data from the request body
+  const { name, address } = req.body;
 
-  const result = await UserService.syncUser({ uid, email });
+  // Pass everything to the service
+  const result = await UserService.syncUser({ uid, email, name, address });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -24,6 +27,16 @@ const getMe = catchAsync(async (req, res) => {
     success: true,
     message: "User profile retrieved successfully",
     data: user,
+  });
+});
+
+const updateMe = catchAsync(async (req, res) => {
+  const result = await UserService.updateMyProfileInDB(req.user.uid, req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile updated successfully!",
+    data: result,
   });
 });
 
@@ -78,4 +91,5 @@ export const UserController = {
   getMyReservations,
   getMyOrderDetails,
   cancelMyOrder,
+  updateMe,
 };
