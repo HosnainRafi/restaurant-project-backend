@@ -1,11 +1,9 @@
 import httpStatus from "http-status";
 import ApiError from "../../../utils/ApiError";
-import { Order } from "../order/order.model";
 import { IReview } from "./review.interface";
 import { Review } from "./review.model";
-import { User } from "../user/user.model";
+import { Order } from "../order/order.model";
 
-// CREATE a new review
 const createReviewInDB = async (
   payload: IReview,
   userId: string
@@ -14,81 +12,90 @@ const createReviewInDB = async (
     _id: payload.orderId,
     "customer.uid": userId,
   });
-  if (!order) {
+  if (!order)
     throw new ApiError(
       httpStatus.NOT_FOUND,
       "Order not found or you are not authorized to review it."
     );
-  }
-  if (order.status !== "completed") {
+  if (order.status !== "completed")
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "You can only review completed orders."
     );
-  }
   const existingReview = await Review.findOne({ orderId: payload.orderId });
-  if (existingReview) {
+  if (existingReview)
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "This order has already been reviewed."
     );
-  }
+
   const reviewData = { ...payload, userId };
   const newReview = await Review.create(reviewData);
   return newReview;
 };
 
-// READ all reviews (for an admin)
-const getAllReviewsFromDB = async (): Promise<IReview[]> => {
-  return Review.find({})
-    .sort({ createdAt: -1 })
-    .populate("orderId", "orderNumber");
-};
-
-// READ all reviews for a specific customer
 const getMyReviewsFromDB = async (userId: string): Promise<IReview[]> => {
   return Review.find({ userId })
     .sort({ createdAt: -1 })
-    .populate("orderId", "orderNumber");
+    .populate("orderId", "orderNumber")
+    .populate("user"); // Use the virtual 'user' property
 };
 
-// UPDATE a review
-const updateReviewInDB = async (
+const getFeaturedReviewsFromDB = async (): Promise<IReview[]> => {
+  return Review.find({ isFeatured: true, rating: { $gte: 4 } })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .populate("user"); // Use the virtual 'user' property
+};
+
+const getAllReviewsForAdmin = async (): Promise<IReview[]> => {
+  return Review.find({})
+    .sort({ createdAt: -1 })
+    .populate("orderId", "orderNumber")
+    .populate("user"); // Use the virtual 'user' property
+};
+
+const updateMyReviewInDB = async (
   reviewId: string,
   userId: string,
-  payload: Partial<IReview>
+  payload: Partial<Pick<IReview, "rating" | "comment">>
 ): Promise<IReview | null> => {
-  const review = await Review.findOne({ _id: reviewId, userId });
-  if (!review) {
+  const review = await Review.findOneAndUpdate(
+    { _id: reviewId, userId },
+    payload,
+    { new: true }
+  );
+  if (!review)
     throw new ApiError(
       httpStatus.NOT_FOUND,
       "Review not found or you do not have permission to edit it."
     );
-  }
-  Object.assign(review, payload);
-  await review.save();
   return review;
 };
 
-// DELETE a review
-const deleteReviewFromDB = async (
+const updateReviewByAdmin = async (
   reviewId: string,
-  userId: string
-): Promise<void> => {
-  const review = await Review.findOne({ _id: reviewId, userId });
-  if (!review) {
-    throw new ApiError(
-      httpStatus.NOT_FOUND,
-      "Review not found or you do not have permission to delete it."
-    );
-  }
-  await review.deleteOne();
+  payload: Partial<IReview>
+): Promise<IReview | null> => {
+  const review = await Review.findByIdAndUpdate(reviewId, payload, {
+    new: true,
+  });
+  if (!review) throw new ApiError(httpStatus.NOT_FOUND, "Review not found.");
+  return review;
+};
+
+const deleteReviewByAdmin = async (reviewId: string): Promise<void> => {
+  const result = await Review.deleteOne({ _id: reviewId });
+  if (result.deletedCount === 0)
+    throw new ApiError(httpStatus.NOT_FOUND, "Review not found.");
 };
 
 export const ReviewService = {
   createReviewInDB,
-  getAllReviewsFromDB,
   getMyReviewsFromDB,
-  updateReviewInDB,
-  deleteReviewFromDB,
+  getFeaturedReviewsFromDB,
+  getAllReviewsForAdmin,
+  updateMyReviewInDB,
+  updateReviewByAdmin,
+  deleteReviewByAdmin,
 };

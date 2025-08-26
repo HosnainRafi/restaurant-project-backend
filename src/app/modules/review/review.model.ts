@@ -7,8 +7,9 @@ const ReviewSchema = new Schema<IReview, ReviewModel>(
       type: Schema.Types.ObjectId,
       ref: "Order",
       required: true,
-      unique: true, // A user can only review an order once
+      unique: true,
     },
+    // This field will store the Firebase UID string
     userId: {
       type: String,
       required: true,
@@ -25,8 +26,26 @@ const ReviewSchema = new Schema<IReview, ReviewModel>(
       trim: true,
       maxlength: 500,
     },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true }, // Ensure virtuals are included when converting to JSON
+    toObject: { virtuals: true },
+  }
 );
 
-export const Review = model<IReview, ReviewModel>("Review", ReviewSchema);
+// --- START: THE FIX ---
+// Create a virtual property to define the relationship for population.
+ReviewSchema.virtual("user", {
+  ref: "User", // The model to use for population
+  localField: "userId", // Find in Review where localField
+  foreignField: "uid", // is equal to foreignField in User
+  justOne: true, // We only expect one user per review
+});
+// --- END: THE FIX ---
+
+export const Review = model<IReview>("Review", ReviewSchema);

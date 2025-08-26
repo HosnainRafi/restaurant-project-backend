@@ -1,36 +1,44 @@
 import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
 import { ReviewController } from "./review.controller";
-import { createReviewValidationSchema } from "./review.validation"; // You'll need to create an update schema too
+import {
+  customerReviewValidationSchema,
+  adminReviewUpdateValidationSchema,
+} from "./review.validation";
 import auth from "../../middlewares/auth";
 
 const router = express.Router();
 
-// Route for admins to get all reviews
-router.get("/", auth("admin"), ReviewController.getAllReviews);
+// --- PUBLIC ROUTE ---
+router.get("/featured", ReviewController.getFeaturedReviews);
 
-// Route for customers to get their own reviews
-router.get("/my-reviews", auth("customer"), ReviewController.getMyReviews);
-
-// Route for a customer to create a review
+// --- CUSTOMER ROUTES ---
 router.post(
   "/",
   auth("customer"),
-  validateRequest(createReviewValidationSchema),
+  validateRequest(customerReviewValidationSchema),
   ReviewController.createReview
 );
-
-// Route for a customer to update their own review
+router.get("/my-reviews", auth("customer"), ReviewController.getMyReviews);
 router.patch(
-  "/:reviewId",
+  "/my-reviews/:reviewId",
   auth("customer"),
-  // Note: For a real app, you'd create an `updateReviewValidationSchema`
-  // that makes fields optional. We'll skip it here for brevity.
-  validateRequest(createReviewValidationSchema),
-  ReviewController.updateReview
+  validateRequest(customerReviewValidationSchema),
+  ReviewController.updateMyReview
 );
 
-// Route for a customer to delete their own review
-router.delete("/:reviewId", auth("customer"), ReviewController.deleteReview);
+// --- ADMIN ROUTES ---
+router.get("/", auth("admin"), ReviewController.getAllReviews);
+router.patch(
+  "/:reviewId",
+  auth("admin"),
+  validateRequest(adminReviewUpdateValidationSchema),
+  ReviewController.updateReviewAsAdmin
+);
+router.delete(
+  "/:reviewId",
+  auth("admin"),
+  ReviewController.deleteReviewAsAdmin
+);
 
 export const ReviewRoutes = router;
