@@ -2,9 +2,15 @@ import httpStatus from "http-status";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { UserService } from "./user.service";
+import ApiError from "../../../utils/ApiError";
 
 const syncUser = catchAsync(async (req, res) => {
-  const { uid, email } = req.user;
+  const { uid, email } = req.user as {
+    uid: string;
+    email: string;
+    name?: string;
+    picture?: string;
+  };
   const { name, address } = req.body;
   const result = await UserService.syncUser({ uid, email, name, address });
   sendResponse(res, {
@@ -14,14 +20,48 @@ const syncUser = catchAsync(async (req, res) => {
     data: result,
   });
 });
+// const getMe = catchAsync(async (req, res) => {
+//   const user = await UserService.getUserByUid(req.user.uid);
+//   sendResponse(res, {
+//     statusCode: httpStatus.OK,
+//     success: true,
+//     message: "User profile retrieved successfully",
+//     data: user,
+//   });
+// });
 
+// user.controller.ts
 const getMe = catchAsync(async (req, res) => {
-  const user = await UserService.getUserByUid(req.user.uid);
+  const {
+    uid,
+    email: maybeEmail,
+    name,
+  } = req.user as {
+    uid: string;
+    email?: string;
+    name?: string;
+    picture?: string;
+  };
+
+  // Assert email is defined
+  if (!maybeEmail) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Email missing in token payload"
+    );
+  }
+
+  const dbUser = await UserService.getOrCreateUser({
+    uid,
+    email: maybeEmail, // now strictly string
+    name,
+  });
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "User profile retrieved successfully",
-    data: user,
+    data: dbUser,
   });
 });
 

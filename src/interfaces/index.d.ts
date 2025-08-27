@@ -1,9 +1,9 @@
-import { JwtPayload } from "jsonwebtoken";
+import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
 
 declare global {
   namespace Express {
     interface Request {
-      user: JwtPayload;
+      user: DecodedIdToken;
     }
   }
 }

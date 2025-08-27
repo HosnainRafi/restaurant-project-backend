@@ -11,7 +11,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
     try {
       // 1. Get the token from the Authorization header
       const token = req.headers.authorization?.split(" ")[1];
-
+      console.log(token);
       if (!token) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
       }
@@ -20,13 +20,13 @@ const auth = (...requiredRoles: TUserRole[]) => {
       // Use the Firebase Admin SDK to verify the ID token.
       // This method returns a `DecodedIdToken` object, which is exactly what your services need.
       const decodedToken = await admin.auth().verifyIdToken(token);
-
+      console.log(decodedToken);
       // 3. Check for roles if the route requires them
       if (requiredRoles.length > 0) {
         // For protected routes, we need to ensure the user exists in our database
         // and has the correct role.
         const userInDb = await User.findOne({ uid: decodedToken.uid });
-
+        console.log(userInDb);
         if (!userInDb) {
           throw new ApiError(
             httpStatus.FORBIDDEN,

@@ -15,8 +15,12 @@ const syncUser = async (payload: {
   address?: IAddress;
 }): Promise<IUser> => {
   const { uid, email, name, address } = payload;
-  let user = await User.findOne({ uid });
+  console.log("Sync payload:", payload);
+  // Look up by uid OR email
+  let user = await User.findOne({ $or: [{ uid }, { email }] });
+
   if (!user) {
+    // If not found, create new
     user = await User.create({
       uid,
       email,
@@ -26,7 +30,14 @@ const syncUser = async (payload: {
       photoURL:
         "https://res.cloudinary.com/du8e3wgew/image/upload/v1756087795/dx47mzwd8xxtxacrbd3h.png",
     });
+  } else {
+    // If found by email but missing uid, sync it
+    if (!user.uid) {
+      user.uid = uid;
+      await user.save();
+    }
   }
+
   return user;
 };
 
@@ -106,6 +117,36 @@ const cancelMyOrderInDB = async (
   return order;
 };
 
+const getOrCreateUser = async (payload: {
+  uid: string;
+  email: string;
+  name?: string;
+}): Promise<IUser> => {
+  const { uid, email, name } = payload;
+
+  // Look up by uid OR email (same logic as syncUser)
+  let user = await User.findOne({ $or: [{ uid }, { email }] });
+
+  if (!user) {
+    // Create new user if not found
+    user = await User.create({
+      uid,
+      email,
+      name: name || email.split("@")[0],
+      role: "customer",
+      photoURL:
+        "https://res.cloudinary.com/du8e3wgew/image/upload/v1756087795/dx47mzwd8xxtxacrbd3h.png",
+      addresses: [],
+    });
+  } else if (!user.uid) {
+    // If found by email but missing uid, sync it
+    user.uid = uid;
+    await user.save();
+  }
+
+  return user;
+};
+
 // The changeUserPasswordInDB function has been removed.
 
 export const UserService = {
@@ -116,4 +157,5 @@ export const UserService = {
   getMyOrderDetailsFromDB,
   cancelMyOrderInDB,
   updateMyProfileInDB,
+  getOrCreateUser,
 };

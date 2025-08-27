@@ -8,9 +8,11 @@ const serviceAccountPath = path.join(
 );
 
 // Initialize the Firebase Admin SDK
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccountPath),
-});
+const serviceAccount = require(serviceAccountPath);
 
+// Initialize the Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 // Export the initialized admin object for use in other parts of your app
 export { admin };
