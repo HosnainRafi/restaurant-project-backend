@@ -273,9 +273,32 @@ const handleSuccessfulPayment = async (orderId: string): Promise<void> => {
   getIO().to(order.restaurantId.toString()).emit("order:updated", order);
 };
 
+const getCustomerOrdersFromDB = async (userId: string): Promise<IOrder[]> => {
+  return Order.find({ "customer.uid": userId })
+    .sort({ createdAt: -1 })
+    .populate("review") // Populate the review data
+    .lean();
+};
+
+// Get a specific order with review (for detailed view)
+const getOrderByIdFromDB = async (
+  orderId: string,
+  userId: string
+): Promise<IOrder | null> => {
+  return Order.findOne({
+    _id: orderId,
+    "customer.uid": userId,
+  })
+    .populate("review")
+    .populate("user")
+    .lean();
+};
+
 export const OrderService = {
   createOrderIntoDB,
   getOrdersFromDB,
   updateOrderStatusInDB,
   handleSuccessfulPayment,
+  getCustomerOrdersFromDB,
+  getOrderByIdFromDB,
 };

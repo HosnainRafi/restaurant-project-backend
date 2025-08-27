@@ -64,8 +64,36 @@ const updateOrderStatus = catchAsync(async (req, res) => {
   });
 });
 
+const getMyOrders = catchAsync(async (req, res) => {
+  const result = await OrderService.getCustomerOrdersFromDB(req.user.uid);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Your orders retrieved successfully",
+    data: result,
+  });
+});
+
+const getOrderById = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await OrderService.getOrderByIdFromDB(id, req.user.uid);
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Order retrieved successfully",
+    data: result,
+  });
+});
+
 export const OrderController = {
   createOrder,
   getAllOrders,
   updateOrderStatus,
+  getMyOrders,
+  getOrderById,
 };

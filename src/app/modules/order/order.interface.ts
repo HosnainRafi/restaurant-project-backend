@@ -35,6 +35,7 @@ export interface IOrder {
   // --- NEW FIELDS ---
   paymentStatus: "paid" | "unpaid";
   paymentIntentId?: string; // To store the Stripe Payment Intent ID
+  reviewId?: Types.ObjectId; // ADDED: Reference to the review for this order
 }
 
 export interface OrderModel extends Model<IOrder> {}

@@ -19,6 +19,10 @@ router.post(
 // ✅ New admin route to get all orders
 router.get("/", auth("admin", "staff"), OrderController.getAllOrders);
 
+// CUSTOMER ROUTES
+router.get("/my-orders", auth("customer"), OrderController.getMyOrders);
+router.get("/my-orders/:id", auth("customer"), OrderController.getOrderById);
+
 // ✅ New admin route to update an order's status
 router.patch(
   "/:id",

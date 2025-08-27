@@ -12,16 +12,20 @@ const createReviewInDB = async (
     _id: payload.orderId,
     "customer.uid": userId,
   });
+
   if (!order)
     throw new ApiError(
       httpStatus.NOT_FOUND,
       "Order not found or you are not authorized to review it."
     );
+
+  // UPDATED: Only allow reviews for completed orders
   if (order.status !== "completed")
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "You can only review completed orders."
+      "You can only review completed/delivered orders."
     );
+
   const existingReview = await Review.findOne({ orderId: payload.orderId });
   if (existingReview)
     throw new ApiError(
@@ -31,6 +35,12 @@ const createReviewInDB = async (
 
   const reviewData = { ...payload, userId };
   const newReview = await Review.create(reviewData);
+
+  // ADDED: Update the order to reference this review
+  await Order.findByIdAndUpdate(payload.orderId, {
+    reviewId: newReview._id,
+  });
+
   return newReview;
 };
 
@@ -38,21 +48,21 @@ const getMyReviewsFromDB = async (userId: string): Promise<IReview[]> => {
   return Review.find({ userId })
     .sort({ createdAt: -1 })
     .populate("orderId", "orderNumber")
-    .populate("user"); // Use the virtual 'user' property
+    .populate("user");
 };
 
 const getFeaturedReviewsFromDB = async (): Promise<IReview[]> => {
   return Review.find({ isFeatured: true, rating: { $gte: 4 } })
     .sort({ createdAt: -1 })
     .limit(10)
-    .populate("user"); // Use the virtual 'user' property
+    .populate("user");
 };
 
 const getAllReviewsForAdmin = async (): Promise<IReview[]> => {
   return Review.find({})
     .sort({ createdAt: -1 })
     .populate("orderId", "orderNumber")
-    .populate("user"); // Use the virtual 'user' property
+    .populate("user");
 };
 
 const updateMyReviewInDB = async (
@@ -65,6 +75,7 @@ const updateMyReviewInDB = async (
     payload,
     { new: true }
   );
+
   if (!review)
     throw new ApiError(
       httpStatus.NOT_FOUND,
@@ -85,9 +96,18 @@ const updateReviewByAdmin = async (
 };
 
 const deleteReviewByAdmin = async (reviewId: string): Promise<void> => {
-  const result = await Review.deleteOne({ _id: reviewId });
-  if (result.deletedCount === 0)
+  const review = await Review.findById(reviewId);
+  if (!review) {
     throw new ApiError(httpStatus.NOT_FOUND, "Review not found.");
+  }
+
+  // ADDED: Remove review reference from order
+  await Order.findOneAndUpdate(
+    { reviewId: reviewId },
+    { $unset: { reviewId: 1 } }
+  );
+
+  await Review.deleteOne({ _id: reviewId });
 };
 
 export const ReviewService = {

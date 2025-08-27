@@ -62,8 +62,25 @@ const OrderSchema = new Schema<IOrder, OrderModel>(
     paymentIntentId: {
       type: String,
     },
+    // ADDED: Reference to review
+    reviewId: {
+      type: Schema.Types.ObjectId,
+      ref: "Review",
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
-export const Order = model<IOrder, OrderModel>("Order", OrderSchema);
+// Virtual to populate review data
+OrderSchema.virtual("review", {
+  ref: "Review",
+  localField: "reviewId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+export const Order = model<IOrder>("Order", OrderSchema);
