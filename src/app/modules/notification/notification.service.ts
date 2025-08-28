@@ -29,9 +29,14 @@ const markNotificationsAsRead = async (userId: string): Promise<void> => {
     { isRead: true }
   );
 };
-
+const markNotificationAsReadSingle = async (
+  notificationId: string
+): Promise<void> => {
+  await Notification.findByIdAndUpdate(notificationId, { isRead: true });
+};
 export const NotificationService = {
   createNotification,
   getMyNotifications,
   markNotificationsAsRead,
+  markNotificationAsReadSingle,
 };

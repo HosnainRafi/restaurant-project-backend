@@ -25,5 +25,18 @@ const markAsRead = catchAsync(async (req, res) => {
     data: null,
   });
 });
-
-export const NotificationController = { getMyNotifications, markAsRead };
+const markAsReadSingle = catchAsync(async (req, res) => {
+  const notificationId = req.params.id;
+  await NotificationService.markNotificationAsReadSingle(notificationId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Notification marked as read successfully',
+    data: null,
+  });
+});
+export const NotificationController = {
+  getMyNotifications,
+  markAsRead,
+  markAsReadSingle,
+};
