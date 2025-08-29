@@ -7,11 +7,12 @@ export interface IAddress {
 }
 
 export type TUserRole = "admin" | "manager" | "staff" | "customer";
-
+export type TUserStatus = 'active' | 'blocked';
 export interface IUser {
   uid: string; // Firebase Unique ID
   email: string;
   role: TUserRole;
+  status: TUserStatus;
   // --- ADDED: New fields for the user profile ---
   name: string;
   photoURL?: string; // Optional: for the profile picture

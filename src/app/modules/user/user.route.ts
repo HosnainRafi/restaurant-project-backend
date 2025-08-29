@@ -4,6 +4,7 @@ import auth from "../../middlewares/auth"; // The new Firebase auth middleware
 import validateRequest from "../../../app/middlewares/validateRequest";
 import {
   changePasswordValidationSchema,
+  updateUserStatusValidationSchema,
   updateUserValidationSchema,
   userSyncValidationSchema,
 } from "./user.validation";
@@ -56,5 +57,18 @@ router.patch(
 //   validateRequest(changePasswordValidationSchema),
 //   UserController.changePassword
 // );
+
+router.get(
+  '/', // Corresponds to GET /api/v1/users
+  auth('admin'), // Only admins can access
+  UserController.getAllUsers,
+);
+
+router.patch(
+  '/:id/status', // Corresponds to PATCH /api/v1/users/:id/status
+  auth('admin'), // Only admins can access
+  validateRequest(updateUserStatusValidationSchema), // Validate the payload
+  UserController.updateUserStatus,
+);
 
 export const UserRoutes = router;

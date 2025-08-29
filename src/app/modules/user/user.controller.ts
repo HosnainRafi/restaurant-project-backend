@@ -117,6 +117,30 @@ const cancelMyOrder = catchAsync(async (req, res) => {
   });
 });
 
+
+// --- NEW: Controller to get all users ---
+const getAllUsers = catchAsync(async (req, res) => {
+  const result = await UserService.getAllUsersFromDB();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Users retrieved successfully!',
+    data: result,
+  });
+});
+
+//  Controller to update user status ---
+const updateUserStatus = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const result = await UserService.updateUserStatusInDB(id, status);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User status updated successfully!',
+    data: result,
+  });
+});
 // The changePassword controller function has been removed.
 
 export const UserController = {
@@ -127,4 +151,6 @@ export const UserController = {
   getMyReservations,
   getMyOrderDetails,
   cancelMyOrder,
+   getAllUsers,
+  updateUserStatus,
 };

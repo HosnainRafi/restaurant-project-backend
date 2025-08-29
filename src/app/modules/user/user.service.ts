@@ -1,12 +1,12 @@
+import httpStatus from "http-status";
+import { getIO } from "../../../socket/index";
 import ApiError from "../../../utils/ApiError";
 import { IOrder } from "../order/order.interface";
 import { Order } from "../order/order.model";
 import { IReservation } from "../reservation/reservation.interface";
 import { Reservation } from "../reservation/reservation.model";
-import { IAddress, IUser } from "./user.interface";
+import { IAddress, IUser, TUserStatus } from "./user.interface";
 import { User } from "./user.model";
-import httpStatus from "http-status";
-import { getIO } from "../../../socket/index";
 
 const syncUser = async (payload: {
   uid: string;
@@ -146,6 +146,34 @@ const getOrCreateUser = async (payload: {
 
   return user;
 };
+// --- NEW: Function for admins to get all users ---
+const getAllUsersFromDB = async (): Promise<IUser[]> => {
+  const result = await User.find({}).sort({ createdAt: -1 });
+  return result;
+};
+
+//Function for admins to update a user's status like block and active
+const updateUserStatusInDB = async (
+  userId: string,
+  status: TUserStatus,
+): Promise<IUser | null> => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found!');
+  }
+  // if (user.role === 'admin') {
+  //   throw new ApiError(
+  //     httpStatus.BAD_REQUEST,
+  //     'Admins cannot be blocked. This action is not permitted.',
+  //   );
+  // }
+
+  user.status = status;
+  await user.save();
+
+  return user;
+};
 
 // The changeUserPasswordInDB function has been removed.
 
@@ -158,4 +186,6 @@ export const UserService = {
   cancelMyOrderInDB,
   updateMyProfileInDB,
   getOrCreateUser,
+  getAllUsersFromDB,
+  updateUserStatusInDB,
 };

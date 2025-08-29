@@ -47,3 +47,10 @@ export const changePasswordValidationSchema = z.object({
       path: ["confirmPassword"], // Point error to the confirmPassword field
     }),
 });
+export const updateUserStatusValidationSchema = z.object({
+  body: z.object({
+    status: z.enum(['active', 'blocked'], {
+      required_error: 'Status is required',
+    }),
+  }),
+});

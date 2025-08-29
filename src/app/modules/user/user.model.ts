@@ -25,6 +25,11 @@ const UserSchema = new Schema<IUser, UserModel>(
       enum: ["admin", "manager", "staff", "customer"],
       default: "customer",
     },
+    status: {
+      type: String,
+      enum: ['active', 'blocked'],
+      default: 'active',
+    },
     // --- ADDED: Schema definitions for new fields ---
     name: {
       type: String,
