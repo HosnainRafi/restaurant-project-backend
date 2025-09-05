@@ -20,4 +20,5 @@ pnpm-debug.log*
 *.ntvs*
 *.njsproj
 *.sln
-*.swp
+*.swpfirebase-service-account-key.json
+src/app/lib/firebase-service-account-key.json
