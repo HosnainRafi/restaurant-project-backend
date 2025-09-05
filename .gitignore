@@ -1,6 +1,7 @@
 # Dependencies
 /node_modules
 /dist
+firebase-service-account-key.json
 # Environment Variables
 .env
 
