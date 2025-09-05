@@ -22,3 +22,6 @@ pnpm-debug.log*
 *.sln
 *.swpfirebase-service-account-key.json
 src/app/lib/firebase-service-account-key.json
+firebase-service-account-key.json
+src/app/lib/firebase-service-account-key.json
+*.json
